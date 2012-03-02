@@ -20,7 +20,7 @@
 		append_to = document.head || document.getElementsByTagName("head"),
 		
 		// inferences... ick, but still necessary
-		opera_or_gecko = (global.opera && Object.prototype.toString.call(global.opera) == "[object Opera]") || ("MozAppearance" in document.documentElement.style),
+		opera_or_gecko = (global.opera && Object.prototype.toString.call(global.opera) === "[object Opera]") || ("MozAppearance" in document.documentElement.style),
 
 /*!START_DEBUG*/
 		// console.log() and console.error() wrappers
@@ -30,13 +30,12 @@
 		
 		// feature sniffs (yay!)
 		test_script_elem = document.createElement("script"),
-		explicit_preloading = typeof test_script_elem.preload == "boolean", // http://wiki.whatwg.org/wiki/Script_Execution_Control#Proposal_1_.28Nicholas_Zakas.29
-		real_preloading = explicit_preloading || (test_script_elem.readyState && test_script_elem.readyState == "uninitialized"), // will a script preload with `src` set before DOM append?
+		explicit_preloading = typeof test_script_elem.preload === "boolean", // http://wiki.whatwg.org/wiki/Script_Execution_Control#Proposal_1_.28Nicholas_Zakas.29
+		real_preloading = explicit_preloading || (test_script_elem.readyState && test_script_elem.readyState === "uninitialized"), // will a script preload with `src` set before DOM append?
 		script_ordered_async = !real_preloading && test_script_elem.async === true, // http://wiki.whatwg.org/wiki/Dynamic_Script_Execution_Order
 		
 		// XHR preloading (same-domain) and cache-preloading (remote-domain) are the fallbacks (for some browsers)
-		xhr_or_cache_preloading = !real_preloading && !script_ordered_async && !opera_or_gecko
-	;
+		xhr_or_cache_preloading = !real_preloading && !script_ordered_async && !opera_or_gecko;
 
 /*!START_DEBUG*/
 	// define console wrapper functions if applicable
@@ -48,10 +47,10 @@
 /*!END_DEBUG*/
 
 	// test for function
-	function is_func(func) { return Object.prototype.toString.call(func) == "[object Function]"; }
+	function is_func(func) { return Object.prototype.toString.call(func) === "[object Function]"; }
 
 	// test for array
-	function is_array(arr) { return Object.prototype.toString.call(arr) == "[object Array]"; }
+	function is_array(arr) { return Object.prototype.toString.call(arr) === "[object Array]"; }
 
 	// make script URL absolute/canonical
 	function canonical_uri(src,base_path) {
@@ -67,7 +66,7 @@
 			src = (base_path || "") + src;
 		}
 		// make sure to return `src` as absolute
-		return absolute_regex.test(src) ? src : ((src.charAt(0) == "/" ? root_domain : root_page) + src);
+		return absolute_regex.test(src) ? src : ((src.charAt(0) === "/" ? root_domain : root_page) + src);
 	}
 
 	// merge `source` into `target`
@@ -142,18 +141,18 @@
 					}
 					else {
 						script.onreadystatechange = function(){
-							if (script.readyState == "loaded") onload();
+							if (script.readyState === "loaded") onload();
 						};
 					}
 					script.src = src;
 					// NOTE: no append to DOM yet, appending will happen when ready to execute
 				}
 				// same-domain and XHR allowed? use XHR preloading
-				else if (preload_this_script && src.indexOf(root_domain) == 0 && chain_opts[_UseLocalXHR]) {
+				else if (preload_this_script && src.indexOf(root_domain) === 0 && chain_opts[_UseLocalXHR]) {
 					xhr = new XMLHttpRequest(); // note: IE never uses XHR (it supports true preloading), so no more need for ActiveXObject fallback for IE <= 7
 					/*!START_DEBUG*/if (chain_opts[_Debug]) log_msg("start script preload (xhr): "+src);/*!END_DEBUG*/
 					xhr.onreadystatechange = function() {
-						if (xhr.readyState == 4) {
+						if (xhr.readyState === 4) {
 							xhr.onreadystatechange = function(){}; // fix a memory leak in IE
 							registry_item.text = xhr.responseText + "\n//@ sourceURL=" + src; // http://blog.getfirebug.com/2009/08/11/give-your-eval-a-name-with-sourceurl/
 							onload();
@@ -198,8 +197,7 @@
 			can_use_preloading = real_preloading || xhr_or_cache_preloading,
 			queue = [],
 			registry = {},
-			instanceAPI
-		;
+			instanceAPI;
 		
 		// global defaults
 		global_defaults[_UseLocalXHR] = true;
@@ -214,7 +212,7 @@
 			var script;
 			
 			function preload_execute_finished() {
-				if (script != null) { // make sure this only ever fires once
+				if (script !== null) { // make sure this only ever fires once
 					script = null;
 					script_executed(registry_item);
 				}
@@ -260,25 +258,20 @@
 			script_obj.src = canonical_uri(script_obj.src,chain_opts[_BasePath]);
 			script_obj.real_src = script_obj.src + 
 				// append cache-bust param to URL?
-				(chain_opts[_CacheBust] ? ((/\?.*$/.test(script_obj.src) ? "&_" : "?_") + ~~(Math.random()*1E9) + "=") : "")
-			;
+				(chain_opts[_CacheBust] ? ((/\?.*$/.test(script_obj.src) ? "&_" : "?_") + ~~(Math.random()*1E9) + "=") : "");
 			
 			if (!registry[script_obj.src]) registry[script_obj.src] = {items:[],finished:false};
 			registry_items = registry[script_obj.src].items;
 
 			// allowing duplicates, or is this the first recorded load of this script?
-			if (chain_opts[_AllowDuplicates] || registry_items.length == 0) {
+			if (chain_opts[_AllowDuplicates] || registry_items.length === 0) {
 				registry_item = registry_items[registry_items.length] = {
 					ready:false,
 					finished:false,
 					ready_listeners:[ready_cb],
 					finished_listeners:[finished_cb]
 				};
-
-				request_script(chain_opts,script_obj,registry_item,
-					// which callback type to pass?
-					(
-					 	(preload_this_script) ? // depends on script-preloading
+                var localfn = (preload_this_script) ? // depends on script-preloading
 						function(){
 							registry_item.ready = true;
 							for (var i=0; i<registry_item.ready_listeners.length; i++) {
@@ -286,11 +279,8 @@
 							}
 							registry_item.ready_listeners = [];
 						} :
-						function(){ script_executed(registry_item); }
-					),
-					// signal if script-preloading should be used or not
-					preload_this_script
-				);
+						function(){ script_executed(registry_item); };
+				request_script(chain_opts,script_obj,registry_item, localfn, preload_this_script);
 			}
 			else {
 				registry_item = registry_items[0];
@@ -310,8 +300,7 @@
 				chain = [],
 				exec_cursor = 0,
 				scripts_currently_loading = false,
-				group
-			;
+				group;
 			
 			// called when a script has finished preloading
 			function chain_script_ready(script_obj,exec_trigger) {
@@ -340,7 +329,7 @@
 				while (exec_cursor < chain.length) {
 					if (is_func(chain[exec_cursor])) {
 						/*!START_DEBUG*/if (chain_opts[_Debug]) log_msg("$LAB.wait() executing: "+chain[exec_cursor]);/*!END_DEBUG*/
-						try { chain[exec_cursor++](); } catch (err) {
+						try { chain[exec_cursor](); cursor += 1; } catch (err) {
 							/*!START_DEBUG*/if (chain_opts[_Debug]) log_error("$LAB.wait() error caught: ",err);/*!END_DEBUG*/
 						}
 						continue;
@@ -350,9 +339,9 @@
 						break;
 					}
 					exec_cursor++;
-				}
+					}
 				// we've reached the end of the chain (so far)
-				if (exec_cursor == chain.length) {
+				if (exec_cursor === chain.length) {
 					scripts_currently_loading = false;
 					group = false;
 				}
@@ -390,7 +379,7 @@
 									j--; // adjust `j` to account for the loop's subsequent `j++`, so that the next loop iteration uses the same `j` index value
 									continue;
 								}
-								if (typeof script_obj == "string") script_obj = {src:script_obj};
+								if (typeof script_obj === "string") script_obj = {src:script_obj};
 								script_obj = merge_objs(script_obj,{
 									ready:false,
 									ready_cb:chain_script_ready,
@@ -466,7 +455,7 @@
 			},
 			runQueue:function(){
 				var $L = instanceAPI, len=queue.length, i=len, val;
-				for (;--i>=0;) {
+				for (;i>=0;i--) {
 					val = queue.shift();
 					$L = $L[val.type].apply(null,val.args);
 				}
@@ -502,7 +491,7 @@
 	   fixed by this hack, and should therefore **not** be lazy-loaded by script loader tools such as LABjs.
 	*/ 
 	(function(addEvent,domLoaded,handler){
-		if (document.readyState == null && document[addEvent]){
+		if (document.readyState === null && document[addEvent]){
 			document.readyState = "loading";
 			document[addEvent](domLoaded,handler = function(){
 				document.removeEventListener(domLoaded,handler,false);
